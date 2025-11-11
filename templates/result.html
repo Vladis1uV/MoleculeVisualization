@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Molecular Structure</h3>
+            </div>
+            <div class="card-body text-center">
+                <h4>Formula: {{ formula }}</h4>
+                <p><strong>SMILES:</strong> <code>{{ smiles }}</code></p>
+                
+                <div class="mt-4">
+                    <img src="{{ image_data }}" alt="Molecular structure of {{ formula }}" 
+                         class="img-fluid border rounded">
+                </div>
+                
+                <div class="mt-4">
+                    <a href="/" class="btn btn-primary">Search Another Molecule</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

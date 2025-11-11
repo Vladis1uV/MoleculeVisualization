@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Molecular Formula to Structure</h3>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                
+                <form method="POST" action="/search">
+                    <div class="mb-3">
+                        <label for="formula" class="form-label">Enter Molecular Formula:</label>
+                        <input type="text" class="form-control" id="formula" name="formula" 
+                               placeholder="e.g., C6H6, H2O, C2H5OH" required>
+                        <div class="form-text">
+                            Examples: C6H6 (Benzene), H2O (Water), C2H5OH (Ethanol)
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Visualize Molecule</button>
+                </form>
+                
+                <div class="mt-4">
+                    <h5>How it works:</h5>
+                    <ol>
+                        <li>Enter a molecular formula (e.g., C6H6)</li>
+                        <li>The app queries PubChem database to find the compound</li>
+                        <li>Converts the formula to SMILES notation</li>
+                        <li>Generates and displays the molecular structure</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
