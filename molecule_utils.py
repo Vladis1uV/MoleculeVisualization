@@ -4,9 +4,17 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, rdmolfiles
 import os
 import uuid
+import glob
 
 BASE_FOLDER = "molecules/temp"
 os.makedirs(BASE_FOLDER, exist_ok=True)
+
+def cleanup_old_files(folder="molecules/temp", max_age_sec=300):
+    """Delete .mol files older than max_age_sec seconds."""
+    now = time.time()
+    for f in glob.glob(os.path.join(folder, "*.mol")):
+        if now - os.path.getmtime(f) > max_age_sec:
+            os.remove(f)
 
 def fetch_molecule_smiles(name, max_wait=20):
     """Fetch SMILES from PubChem and handle waiting response"""

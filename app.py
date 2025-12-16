@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, send_file
-from molecule_utils import fetch_molecule_smiles, generate_3d_molecule, save_molecule
+from molecule_utils import fetch_molecule_smiles, generate_3d_molecule, save_molecule, cleanup_old_files
 import os
 
 
@@ -10,9 +10,13 @@ def index():
     mol_file = None
     formula = None
     error = None
+
     if request.method == "POST":
         formula = request.form.get("formula")
         if formula:
+            # Clean up old files first
+            cleanup_old_files()
+
             smiles = fetch_molecule_smiles(formula)
             if smiles:
                 mol = generate_3d_molecule(smiles)
