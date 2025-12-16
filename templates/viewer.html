@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Molecule 3D Viewer</title>
+    <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+    <script src="{{ url_for('static', filename='js/viewer.js') }}"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .main-container { display: flex; align-items: flex-start; gap: 40px; }
+        .form-container { flex: 1; max-width: 300px; }
+        .viewer-container { flex: 2; }
+        form { display: flex; flex-direction: column; margin-bottom: 10px; }
+        input[type="text"] { padding: 8px; font-size: 16px; margin-bottom: 10px; }
+        input[type="submit"], .isomer-button { padding: 8px; font-size: 16px; cursor: pointer; margin-bottom: 5px; }
+        #container { width: 500px; height: 500px; border: 1px solid #ccc; }
+        .info { margin-top: 10px; }
+        p.error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Molecule 3D Viewer</h1>
+
+    <div class="main-container">
+        <!-- Left: form + errors + isomers -->
+        <div class="form-container">
+            <form method="POST">
+                <input type="text" name="formula" placeholder="Enter molecule formula (e.g., H2O)" value="{{ formula or '' }}">
+                <input type="submit" value="Visualize">
+            </form>
+
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% endif %}
+
+            {% if isomers %}
+                <p>Multiple isomers found. Please select one:</p>
+                {% for iso in isomers %}
+                    <form method="POST" style="display:inline">
+                        <input type="hidden" name="formula" value="{{ iso.name }}">
+                        <button type="submit" class="isomer-button">{{ iso.name }}</button>
+                    </form>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Right: molecule viewer + info -->
+        <div class="viewer-container">
+            {% if mol_file %}
+                <h2>{{ formula }}</h2>
+                <div id="container"></div>
+
+                <div class="info">
+                    {% if info %}
+                        <p><strong>IUPAC Name:</strong> {{ info.iupac_name }}</p>
+                        <p><strong>Formula:</strong> {{ info.formula }}</p>
+                        <p><strong>Molecular Weight:</strong> {{ info.weight }}</p>
+                    {% endif %}
+                </div>
+
+                <script>
+                    let filename = '{{ mol_file.split("/")[-1] }}';
+                    displayMolecule('/molecule/' + filename, 'container');
+                </script>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
