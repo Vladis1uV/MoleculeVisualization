@@ -1,29 +1,773 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Molecule Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecule 3D Viewer</title>
     <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
-    <script src="{{ url_for('static', filename='js/viewer.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(to right, #4b6cb7, #182848);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            min-height: 600px;
+        }
+        
+        .sidebar {
+            flex: 1;
+            min-width: 300px;
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .viewer-area {
+            flex: 2;
+            min-width: 500px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .search-form {
+            margin-bottom: 30px;
+        }
+        
+        .search-form h2 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+        
+        .help-text {
+            color: #6c757d;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 600;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ced4da;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4b6cb7;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, #4b6cb7, #182848);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .viewer-wrapper {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: white;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #viewer {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .viewer-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            color: #6c757d;
+            font-size: 18px;
+            background: #f8f9fa;
+            flex-direction: column;
+        }
+        
+        .info-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .info-panel h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+        }
+        
+        .info-value {
+            color: #495057;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #f5c6cb;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #c3e6cb;
+        }
+        
+        .isomer-list {
+            margin-top: 20px;
+        }
+        
+        .isomer-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .isomer-btn:hover {
+            background: #e9ecef;
+            border-color: #4b6cb7;
+        }
+        
+        .isomer-info {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+        }
+        
+        .control-btn:hover {
+            background: #545b62;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4b6cb7;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .example-molecules {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .example-molecules h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .example-btn {
+            padding: 8px 12px;
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            background: #dee2e6;
+            border-color: #adb5bd;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar, .viewer-area {
+                min-width: 100%;
+            }
+            
+            .viewer-wrapper {
+                height: 400px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Molecule 3D Viewer</h1>
-    <form method="POST">
-        <input type="text" name="formula" placeholder="Enter molecule formula (e.g., H2O)">
-        <input type="submit" value="Visualize">
-    </form>
-
-    {% if mol_file %}
-        <h2>{{ formula }}</h2>
-        <div id="container" style="width: 500px; height: 500px;"></div>
-        <script>
-            // Extract filename from path
-            let filename = '{{ mol_file.split("/")[-1] }}';
-            displayMolecule('/molecule/' + filename, 'container');
-        </script>
-    {% endif %}
-
-    {% if error %}
-        <p style="color:red">{{ error }}</p>
-    {% endif %}
+    <div class="container">
+        <div class="header">
+            <h1>🔬 Molecule 3D Viewer</h1>
+            <p>Visualize molecular structures in 3D using PubChem data</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="search-form">
+                    <h2>Search Molecules</h2>
+                    <p class="help-text">Enter a molecule name (e.g., "aspirin", "caffeine") or SMILES string</p>
+                    
+                    <form id="searchForm">
+                        <div class="form-group">
+                            <label for="moleculeName">Molecule Name</label>
+                            <input type="text" id="moleculeName" placeholder="e.g., aspirin, glucose, H2O">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="smilesString">Or SMILES String</label>
+                            <input type="text" id="smilesString" placeholder="e.g., CC(=O)OC1=CC=CC=C1C(=O)O">
+                        </div>
+                        
+                        <button type="submit" class="btn">🔍 Search & Visualize</button>
+                    </form>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Fetching molecule data...</p>
+                </div>
+                
+                <div id="errorMessage" class="error" style="display: none;"></div>
+                <div id="successMessage" class="success" style="display: none;"></div>
+                
+                <div id="isomerList" class="isomer-list" style="display: none;">
+                    <h3>Multiple Isomers Found</h3>
+                    <p>Please select one:</p>
+                    <div id="isomerButtons"></div>
+                </div>
+                
+                <div id="moleculeInfo" class="info-panel" style="display: none;">
+                    <h3>Molecule Information</h3>
+                    <div id="infoContent"></div>
+                </div>
+                
+                <div class="example-molecules">
+                    <h4>Try these examples:</h4>
+                    <div class="example-buttons" id="exampleButtons">
+                        <!-- Example buttons will be added by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="viewer-area">
+                <h2>3D Visualization</h2>
+                <div class="controls">
+                    <button class="control-btn" onclick="rotateMolecule()">🔄 Rotate</button>
+                    <button class="control-btn" onclick="zoomIn()">➕ Zoom In</button>
+                    <button class="control-btn" onclick="zoomOut()">➖ Zoom Out</button>
+                    <button class="control-btn" onclick="resetView()">🔄 Reset</button>
+                </div>
+                
+                <div class="viewer-wrapper">
+                    <div id="viewer"></div>
+                    <div id="viewerPlaceholder" class="viewer-placeholder">
+                        Enter a molecule to visualize
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button class="control-btn" onclick="setStyle('stick')">Stick</button>
+                    <button class="control-btn" onclick="setStyle('sphere')">Sphere</button>
+                    <button class="control-btn" onclick="setStyle('cartoon')">Cartoon</button>
+                    <button class="control-btn" onclick="setStyle('surface')">Surface</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentViewer = null;
+        let currentMolFile = null;
+        let isViewerInitialized = false;
+        
+        // Initialize viewer on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initViewer();
+            setupExamples();
+        });
+        
+        function initViewer() {
+            if (isViewerInitialized && currentViewer) {
+                return currentViewer;
+            }
+            
+            const container = document.getElementById('viewer');
+            const placeholder = document.getElementById('viewerPlaceholder');
+            
+            // Hide placeholder initially
+            placeholder.style.display = 'flex';
+            
+            // Clear any existing content
+            container.innerHTML = '';
+            
+            // Get container dimensions
+            const parent = container.parentElement;
+            const width = parent.clientWidth;
+            const height = parent.clientHeight;
+            
+            // Create viewer
+            currentViewer = $3Dmol.createViewer(container, {
+                backgroundColor: 'white',
+                width: width,
+                height: height
+            });
+            
+            isViewerInitialized = true;
+            return currentViewer;
+        }
+        
+        // Setup example molecules
+        function setupExamples() {
+            const examples = [
+                {name: 'Aspirin', smiles: 'CC(=O)OC1=CC=CC=C1C(=O)O'},
+                {name: 'Caffeine', smiles: 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C'},
+                {name: 'Glucose', smiles: 'C(C1C(C(C(C(O1)O)O)O)O)O'},
+                {name: 'Water', smiles: 'O'},
+                {name: 'Ethanol', smiles: 'CCO'},
+                {name: 'Benzene', smiles: 'C1=CC=CC=C1'},
+                {name: 'Vitamin C', smiles: 'C(C(C1C(=C(C(=O)O1)O)O)O)O'}
+            ];
+            
+            const container = document.getElementById('exampleButtons');
+            
+            examples.forEach(example => {
+                const button = document.createElement('button');
+                button.className = 'example-btn';
+                button.textContent = example.name;
+                button.onclick = () => {
+                    document.getElementById('moleculeName').value = example.name;
+                    document.getElementById('smilesString').value = '';
+                    document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+                };
+                container.appendChild(button);
+            });
+        }
+        
+        // Form submission handler
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('moleculeName').value.trim();
+            const smiles = document.getElementById('smilesString').value.trim();
+            
+            if (!name && !smiles) {
+                showError('Please enter either a molecule name or SMILES string');
+                return;
+            }
+            
+            const query = name || smiles;
+            const searchType = name ? 'name' : 'smiles';
+            
+            // Show loading
+            showLoading(true);
+            hideError();
+            hideSuccess();
+            hideIsomers();
+            hideMoleculeInfo();
+            
+            try {
+                const response = await axios.post('/api/search', {
+                    query: query
+                });
+                
+                const data = response.data;
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+                
+                if (data.type === 'multiple') {
+                    showIsomers(data.isomers, query);
+                    return;
+                }
+                
+                if (data.type === 'single') {
+                    if (data.mol_file) {
+                        displayMolecule(data.mol_file, data);
+                        showMoleculeInfo(data);
+                        showSuccess(`Successfully loaded ${data.formula || query}`);
+                    } else {
+                        // Generate 3D from SMILES
+                        const genResponse = await axios.post('/api/generate_3d', {
+                            smiles: data.smiles,
+                            cid: data.cid
+                        });
+                        
+                        if (genResponse.data.success) {
+                            displayMolecule(genResponse.data.mol_file, data);
+                            showMoleculeInfo(data);
+                            showSuccess(`Successfully loaded ${data.formula || query}`);
+                        } else {
+                            showError('Failed to generate 3D structure');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while fetching molecule data');
+            } finally {
+                showLoading(false);
+            }
+        });
+        
+        function displayMolecule(molFile, molInfo) {
+            // Show loading in viewer area
+            const placeholder = document.getElementById('viewerPlaceholder');
+            placeholder.innerHTML = '<div class="spinner"></div><p>Loading molecule...</p>';
+            placeholder.style.display = 'flex';
+            
+            fetch(molFile)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch molecule file');
+                    }
+                    return response.text();
+                })
+                .then(molData => {
+                    // Initialize viewer
+                    const viewer = initViewer();
+                    
+                    // Clear previous models
+                    viewer.clear();
+                    
+                    // Add new model
+                    viewer.addModel(molData, 'mol');
+                    
+                    // Set style and center
+                    viewer.setStyle({}, {stick: {radius: 0.15}});
+                    viewer.zoomTo();
+                    viewer.render();
+                    
+                    // Hide placeholder
+                    placeholder.style.display = 'none';
+                    
+                    currentMolFile = molFile;
+                    
+                    // Force re-render after a short delay
+                    setTimeout(() => {
+                        viewer.render();
+                    }, 50);
+                })
+                .catch(err => {
+                    console.error('Error loading molecule:', err);
+                    placeholder.innerHTML = '<p style="color: red;">Error loading molecule</p>';
+                    showError('Failed to load molecule file');
+                });
+        }
+        
+        // Style functions
+        function setStyle(style) {
+            if (!currentViewer) return;
+            
+            currentViewer.setStyle({}, {});
+            
+            switch(style) {
+                case 'stick':
+                    currentViewer.setStyle({}, {stick: {radius: 0.15}});
+                    break;
+                case 'sphere':
+                    currentViewer.setStyle({}, {sphere: {radius: 0.5}});
+                    break;
+                case 'cartoon':
+                    currentViewer.setStyle({}, {cartoon: {}});
+                    break;
+                case 'surface':
+                    currentViewer.setStyle({}, {sphere: {hidden: true}});
+                    currentViewer.addSurface($3Dmol.SurfaceType.VDW, {
+                        opacity: 0.7,
+                        color: 'lightblue'
+                    });
+                    break;
+            }
+            
+            currentViewer.render();
+        }
+        
+        // Control functions
+        function rotateMolecule() {
+            if (currentViewer) {
+                currentViewer.animate({
+                    loop: 'backAndForth',
+                    reps: 0,
+                    interval: 50
+                });
+            }
+        }
+        
+        function zoomIn() {
+            if (currentViewer) {
+                currentViewer.zoom(1.2);
+                currentViewer.render();
+            }
+        }
+        
+        function zoomOut() {
+            if (currentViewer) {
+                currentViewer.zoom(0.8);
+                currentViewer.render();
+            }
+        }
+        
+        function resetView() {
+            if (currentViewer) {
+                currentViewer.zoomTo();
+                currentViewer.render();
+            }
+        }
+        
+        // UI helper functions
+        function showIsomers(isomers, query) {
+            const container = document.getElementById('isomerButtons');
+            container.innerHTML = '';
+            
+            isomers.forEach(isomer => {
+                const button = document.createElement('button');
+                button.className = 'isomer-btn';
+                button.innerHTML = `
+                    <strong>${isomer.name}</strong>
+                    <div class="isomer-info">
+                        ${isomer.formula} • MW: ${isomer.weight?.toFixed(2) || 'N/A'}
+                    </div>
+                `;
+                
+                button.onclick = async () => {
+                    showLoading(true);
+                    try {
+                        const response = await axios.post('/api/generate_3d', {
+                            smiles: isomer.smiles,
+                            cid: isomer.cid
+                        });
+                        
+                        if (response.data.success) {
+                            displayMolecule(response.data.mol_file, isomer);
+                            showMoleculeInfo(isomer);
+                            showSuccess(`Loaded: ${isomer.name}`);
+                            hideIsomers();
+                        }
+                    } catch (error) {
+                        showError('Failed to generate 3D structure');
+                    } finally {
+                        showLoading(false);
+                    }
+                };
+                
+                container.appendChild(button);
+            });
+            
+            document.getElementById('isomerList').style.display = 'block';
+        }
+        
+        function showMoleculeInfo(info) {
+            const container = document.getElementById('infoContent');
+            
+            let html = `
+                <div class="info-row">
+                    <span class="info-label">IUPAC Name:</span>
+                    <span class="info-value">${info.iupac_name || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Molecular Formula:</span>
+                    <span class="info-value">${info.formula || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Molecular Weight:</span>
+                    <span class="info-value">${info.weight ? info.weight.toFixed(2) : 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">PubChem CID:</span>
+                    <span class="info-value">${info.cid || 'N/A'}</span>
+                </div>
+            `;
+            
+            if (info.synonyms && info.synonyms.length > 0) {
+                html += `
+                    <div class="info-row">
+                        <span class="info-label">Also known as:</span>
+                        <span class="info-value">${info.synonyms.slice(0, 3).join(', ')}</span>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+            document.getElementById('moleculeInfo').style.display = 'block';
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        function showSuccess(message) {
+            const el = document.getElementById('successMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+        
+        function hideSuccess() {
+            document.getElementById('successMessage').style.display = 'none';
+        }
+        
+        function hideIsomers() {
+            document.getElementById('isomerList').style.display = 'none';
+        }
+        
+        function hideMoleculeInfo() {
+            document.getElementById('moleculeInfo').style.display = 'none';
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (currentViewer) {
+                const parent = document.getElementById('viewer').parentElement;
+                currentViewer.setWidth(parent.clientWidth);
+                currentViewer.setHeight(parent.clientHeight);
+                currentViewer.render();
+            }
+        });
+    </script>
 </body>
 </html>
