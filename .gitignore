@@ -38,3 +38,8 @@ Thumbs.db
 
 # Environment variables
 .env
+
+# Project specific
+molecules/temp/
+*.mol
+!molecules/temp/.gitkeep  # Optional: keep empty directory structure

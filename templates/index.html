@@ -257,6 +257,11 @@
             background: #545b62;
         }
         
+        .control-btn.active {
+            background: #4b6cb7;
+            box-shadow: 0 0 0 2px rgba(75, 108, 183, 0.3);
+        }
+        
         .loading {
             display: none;
             text-align: center;
@@ -386,10 +391,9 @@
             <div class="viewer-area">
                 <h2>3D Visualization</h2>
                 <div class="controls">
-                    <button class="control-btn" onclick="rotateMolecule()">🔄 Rotate</button>
                     <button class="control-btn" onclick="zoomIn()">➕ Zoom In</button>
                     <button class="control-btn" onclick="zoomOut()">➖ Zoom Out</button>
-                    <button class="control-btn" onclick="resetView()">🔄 Reset</button>
+                    <button class="control-btn" onclick="resetView()">🔄 Reset All</button>
                 </div>
                 
                 <div class="viewer-wrapper">
@@ -400,10 +404,10 @@
                 </div>
                 
                 <div class="controls">
-                    <button class="control-btn" onclick="setStyle('stick')">Stick</button>
-                    <button class="control-btn" onclick="setStyle('sphere')">Sphere</button>
-                    <button class="control-btn" onclick="setStyle('cartoon')">Cartoon</button>
-                    <button class="control-btn" onclick="setStyle('surface')">Surface</button>
+                    <button class="control-btn active" onclick="setStyle('stick')" id="stickBtn">Stick</button>
+                    <button class="control-btn" onclick="setStyle('sphere')" id="sphereBtn">Sphere</button>
+                    <button class="control-btn" onclick="setStyle('cartoon')" id="cartoonBtn">Cartoon</button>
+                    <button class="control-btn" onclick="setStyle('surface')" id="surfaceBtn">Surface</button>
                 </div>
             </div>
         </div>
@@ -413,11 +417,14 @@
         let currentViewer = null;
         let currentMolFile = null;
         let isViewerInitialized = false;
+        let currentStyle = 'stick';
+        let surfaceAdded = false;
         
         // Initialize viewer on page load
         document.addEventListener('DOMContentLoaded', function() {
             initViewer();
             setupExamples();
+            updateActiveButton('stick');
         });
         
         function initViewer() {
@@ -448,6 +455,18 @@
             
             isViewerInitialized = true;
             return currentViewer;
+        }
+        
+        // Update active button styling
+        function updateActiveButton(style) {
+            // Remove active class from all buttons
+            document.getElementById('stickBtn').classList.remove('active');
+            document.getElementById('sphereBtn').classList.remove('active');
+            document.getElementById('cartoonBtn').classList.remove('active');
+            document.getElementById('surfaceBtn').classList.remove('active');
+            
+            // Add active class to current button
+            document.getElementById(style + 'Btn').classList.add('active');
         }
         
         // Setup example molecules
@@ -562,14 +581,19 @@
                     // Initialize viewer
                     const viewer = initViewer();
                     
-                    // Clear previous models
+                    // Clear previous models and surfaces
                     viewer.clear();
+                    surfaceAdded = false;
                     
                     // Add new model
                     viewer.addModel(molData, 'mol');
                     
-                    // Set style and center
-                    viewer.setStyle({}, {stick: {radius: 0.15}});
+                    // Set default style (stick)
+                    currentStyle = 'stick';
+                    setStyle('stick');
+                    updateActiveButton('stick');
+                    
+                    // Center and zoom
                     viewer.zoomTo();
                     viewer.render();
                     
@@ -594,7 +618,17 @@
         function setStyle(style) {
             if (!currentViewer) return;
             
+            // Clear all styles and surfaces first
             currentViewer.setStyle({}, {});
+            
+            // Remove any existing surface
+            if (surfaceAdded) {
+                currentViewer.removeAllSurfaces();
+                surfaceAdded = false;
+            }
+            
+            currentStyle = style;
+            updateActiveButton(style);
             
             switch(style) {
                 case 'stick':
@@ -607,11 +641,13 @@
                     currentViewer.setStyle({}, {cartoon: {}});
                     break;
                 case 'surface':
+                    // Hide spheres and add surface
                     currentViewer.setStyle({}, {sphere: {hidden: true}});
                     currentViewer.addSurface($3Dmol.SurfaceType.VDW, {
                         opacity: 0.7,
                         color: 'lightblue'
                     });
+                    surfaceAdded = true;
                     break;
             }
             
@@ -619,16 +655,6 @@
         }
         
         // Control functions
-        function rotateMolecule() {
-            if (currentViewer) {
-                currentViewer.animate({
-                    loop: 'backAndForth',
-                    reps: 0,
-                    interval: 50
-                });
-            }
-        }
-        
         function zoomIn() {
             if (currentViewer) {
                 currentViewer.zoom(1.2);
@@ -645,7 +671,18 @@
         
         function resetView() {
             if (currentViewer) {
+                // Reset zoom and rotation
                 currentViewer.zoomTo();
+                
+                // Reset to default style (stick)
+                setStyle('stick');
+                currentStyle = 'stick';
+                updateActiveButton('stick');
+                
+                // Clear any animation
+                currentViewer.stopAnimate();
+                
+                // Re-render
                 currentViewer.render();
             }
         }
