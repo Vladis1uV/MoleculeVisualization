@@ -1,3 +1,4 @@
 Flask
 rdkit
 requests
+pillow
