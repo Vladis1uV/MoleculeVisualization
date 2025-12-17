@@ -1,4 +1,5 @@
 Flask
 rdkit
 requests
-pillow
+numpy
+flask-cors
