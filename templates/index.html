@@ -406,7 +406,6 @@
                 <div class="controls">
                     <button class="control-btn active" onclick="setStyle('stick')" id="stickBtn">Stick</button>
                     <button class="control-btn" onclick="setStyle('sphere')" id="sphereBtn">Sphere</button>
-                    <button class="control-btn" onclick="setStyle('cartoon')" id="cartoonBtn">Cartoon</button>
                     <button class="control-btn" onclick="setStyle('surface')" id="surfaceBtn">Surface</button>
                 </div>
             </div>
@@ -462,7 +461,6 @@
             // Remove active class from all buttons
             document.getElementById('stickBtn').classList.remove('active');
             document.getElementById('sphereBtn').classList.remove('active');
-            document.getElementById('cartoonBtn').classList.remove('active');
             document.getElementById('surfaceBtn').classList.remove('active');
             
             // Add active class to current button
@@ -636,9 +634,6 @@
                     break;
                 case 'sphere':
                     currentViewer.setStyle({}, {sphere: {radius: 0.5}});
-                    break;
-                case 'cartoon':
-                    currentViewer.setStyle({}, {cartoon: {}});
                     break;
                 case 'surface':
                     // Hide spheres and add surface

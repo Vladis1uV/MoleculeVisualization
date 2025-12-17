@@ -10,11 +10,27 @@ BASE_FOLDER = "molecules/temp"
 os.makedirs(BASE_FOLDER, exist_ok=True)
 
 def cleanup_old_files(folder="molecules/temp", max_age_sec=300):
-    """Delete .mol files older than max_age_sec seconds."""
+    """Delete temporary files older than max_age_sec seconds."""
     now = time.time()
-    for f in glob.glob(os.path.join(folder, "*.mol")):
-        if now - os.path.getmtime(f) > max_age_sec:
-            os.remove(f)
+    
+    if not os.path.isabs(folder):
+        folder = os.path.join(os.getcwd(), folder)
+    
+    os.makedirs(folder, exist_ok=True)
+    
+    for filename in os.listdir(folder):
+        filepath = os.path.join(folder, filename)
+        
+        if os.path.isdir(filepath):
+            continue
+            
+        try:
+            file_age = now - os.path.getmtime(filepath)
+            if file_age > max_age_sec:
+                os.remove(filepath)
+                print(f"Cleaned up: {filename}")
+        except Exception as e:
+            print(f"Could not delete {filename}: {e}")
 
 def fetch_molecule_info(name):
     """

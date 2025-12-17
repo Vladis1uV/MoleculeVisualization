@@ -1,13 +1,12 @@
 from flask import Flask, render_template, request, send_file, jsonify
 from molecule_fetcher import (
     fetch_molecule_info, 
-    generate_3d_molecule, 
-    save_molecule,
     save_molecule_from_smiles,
     cleanup_old_files
 )
 import os
-import json
+import threading
+import time
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
@@ -15,8 +14,6 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        # Clean up old files first
-        cleanup_old_files()
         
         formula = request.form.get("formula", "").strip()
         smiles = request.form.get("smiles", "").strip()
@@ -112,9 +109,26 @@ def api_generate_3d():
     
     return jsonify({"error": "Failed to generate 3D structure"}), 500
 
+def periodic_cleanup(interval_seconds=30):
+    """Run cleanup every interval_seconds in a background thread."""
+    while True:
+        time.sleep(interval_seconds)
+        try:
+            cleanup_old_files()
+            print(f"Periodic cleanup completed at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        except Exception as e:
+            print(f"Error during periodic cleanup: {e}")
+
 if __name__ == "__main__":
     # Create necessary directories
     os.makedirs("molecules/temp", exist_ok=True)
-    os.makedirs("static/js", exist_ok=True)
+    
+    # Initial cleanup
+    cleanup_old_files()
+    
+    # Start the background cleanup thread
+    cleanup_thread = threading.Thread(target=periodic_cleanup, daemon=True)
+    cleanup_thread.start()
+    print("Started periodic cleanup thread (every 30 seconds)")
     
     app.run(debug=True, host='0.0.0.0', port=5000)
