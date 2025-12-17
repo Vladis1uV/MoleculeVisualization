@@ -41,5 +41,6 @@ Thumbs.db
 
 # Project specific
 molecules/temp/
+!temp_mol_files/.gitkeep
 *.mol
 !molecules/temp/.gitkeep  # Optional: keep empty directory structure
