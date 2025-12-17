@@ -123,7 +123,14 @@ flask-cors
 python app.py
 
 # Run on specific port
-python app.py --port 8080
+# Using environment variable
+PORT=8080 python app.py
+
+# Or on Windows CMD:
+set PORT=8080 && python app.py
+
+# Or on Windows PowerShell:
+$env:PORT=8080; python app.py
 ```
 
 ### 📊 Results Achieved

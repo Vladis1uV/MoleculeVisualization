@@ -6,6 +6,7 @@ from rdkit.Chem import AllChem, Draw
 from rdkit.Chem.Descriptors import ExactMolWt
 import base64
 from io import BytesIO
+import os
 from utils.molecule_utils import get_molecule_data, generate_3d_coordinates
 
 app = Flask(__name__)
@@ -372,4 +373,7 @@ def get_molecule_info():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'True').lower() in ['true', '1', 'yes']
+
+    app.run(host='0.0.0.0', port=port, debug=debug)
