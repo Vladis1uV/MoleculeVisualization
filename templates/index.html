@@ -1,29 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Molecule Viewer</title>
-    <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
-    <script src="{{ url_for('static', filename='js/viewer.js') }}"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecule 3D Visualizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <h1>Molecule 3D Viewer</h1>
-    <form method="POST">
-        <input type="text" name="formula" placeholder="Enter molecule formula (e.g., H2O)">
-        <input type="submit" value="Visualize">
-    </form>
+    <div class="container">
+        <header>
+            <h1>🔬 Molecule 3D Visualizer</h1>
+            <p class="subtitle">Search and visualize molecules by chemical formula</p>
+        </header>
 
-    {% if mol_file %}
-        <h2>{{ formula }}</h2>
-        <div id="container" style="width: 500px; height: 500px;"></div>
-        <script>
-            // Extract filename from path
-            let filename = '{{ mol_file.split("/")[-1] }}';
-            displayMolecule('/molecule/' + filename, 'container');
-        </script>
-    {% endif %}
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="search-section">
+                    <h2>Search by Formula</h2>
+                    <div class="search-box">
+                        <input type="text" id="formulaInput" placeholder="Enter chemical formula (e.g., C6H6, H2O, C2H5OH)">
+                        <button onclick="searchMolecules()">Search</button>
+                    </div>
+                    <div class="examples">
+                        <p>Examples: 
+                            <span class="example" onclick="setExample('C6H6')">C6H6</span>, 
+                            <span class="example" onclick="setExample('H2O')">H2O</span>, 
+                            <span class="example" onclick="setExample('C2H5OH')">C2H5OH</span>, 
+                            <span class="example" onclick="setExample('C9H8O4')">C9H8O4</span>
+                        </p>
+                    </div>
+                </div>
 
-    {% if error %}
-        <p style="color:red">{{ error }}</p>
-    {% endif %}
+                <div class="results-section" id="resultsSection" style="display: none;">
+                    <h3>Search Results</h3>
+                    <div id="resultsContainer"></div>
+                </div>
+
+                <div class="properties-section" id="propertiesSection" style="display: none;">
+                    <h3>Molecular Properties</h3>
+                    <div id="propertiesContainer"></div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="visualization-section">
+                    <h2>3D Visualization</h2>
+                    <div id="moleculeContainer">
+                        <div id="loading" style="display: none;">Loading 3D model...</div>
+                        <div id="moleculeViewer"></div>
+                    </div>
+                    <div class="controls">
+                        <button onclick="resetView()">Reset View</button>
+                        <button onclick="toggleBonds()" id="toggleBondsBtn">Hide Bonds</button>
+                        <button onclick="exportPNG()">Export PNG</button>
+                    </div>
+                </div>
+
+                <div class="structure-section">
+                    <h3>2D Structure</h3>
+                    <div id="structureContainer">
+                        <img id="structureImage" style="max-width: 300px; display: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>Information</h3>
+            <div id="infoContainer"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/visualizer.js') }}"></script>
 </body>
 </html>
